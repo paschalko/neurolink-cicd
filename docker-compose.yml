@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  neurolink:
+    build: .
+    container_name: neurolink_app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+    restart: always
+
+  db:
+    image: postgres:15
+    container_name: neurolink_db
+    environment:
+      POSTGRES_USER: neurolink
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: neurolink_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  db_data:

@@ -1,13 +1,16 @@
-version: "3.9"
-
 services:
   neurolink:
     build: .
     container_name: neurolink_app
+    # Only reachable from the host itself; Nginx handles public traffic
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     environment:
-      - FLASK_ENV=production
+      FLASK_ENV: production
+      DATABASE_URL: postgresql://neurolink:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/neurolink_db
+    depends_on:
+      db:
+        condition: service_healthy
     restart: always
 
   db:
@@ -15,12 +18,16 @@ services:
     container_name: neurolink_db
     environment:
       POSTGRES_USER: neurolink
-      POSTGRES_PASSWORD: secret
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
       POSTGRES_DB: neurolink_db
-    ports:
-      - "5432:5432"
+    # No ports published: the database is only reachable from the app container
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neurolink -d neurolink_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: always
 
 volumes:
